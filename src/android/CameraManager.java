@@ -17,6 +17,7 @@ import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.hardware.Camera.Parameters;
 import android.hardware.Camera.Size;
+import android.media.CamcorderProfile;
 import android.os.Build;
 import android.os.Handler;
 import android.util.Log;
@@ -32,6 +33,8 @@ public final class CameraManager {
 	private final Context context;
 	public final CameraConfigurationManager configManager;
 	public Camera camera;
+	Camera.Parameters param;
+	CamcorderProfile camcorderProfile;
 	private boolean initialized;
 	public boolean previewing;
 
@@ -108,6 +111,14 @@ public final class CameraManager {
 			}
 			
 			if (DEBUG) Log.i(TAG, "Camera open success");
+
+			// Get the camera profile. Low quality is adequate for display our demo purposes right now.
+			camcorderProfile = CamcorderProfile.get(CamcorderProfile.QUALITY_LOW);
+
+			param = camera.getParameters();
+			param.setPreviewFrameRate(camcorderProfile.videoFrameRate);
+			camera.setParameters(param);
+
 						
 			camera.setPreviewDisplay(null);
 			
@@ -125,11 +136,11 @@ public final class CameraManager {
 
 			if (!initialized) {
 				initialized = true;
-				configManager.initFromCameraParameters(camera);
-				if (DEBUG) Log.i(TAG, "configManager initialized");
+				//configManager.initFromCameraParameters(camera);
+				//if (DEBUG) Log.i(TAG, "configManager initialized");
 			}
-			configManager.setDesiredCameraParameters(camera);
-			if (DEBUG) Log.i(TAG, "Camera set desired parameters");
+			//configManager.setDesiredCameraParameters(camera);
+			//if (DEBUG) Log.i(TAG, "Camera set desired parameters");
 					
 
 		} else {
@@ -642,6 +653,7 @@ final class PreviewCallback implements Camera.PreviewCallback {
 	public static float currentFPS = 0f;
 
 	private final CameraConfigurationManager configManager;
+	Camera.Parameters param;
 
 	public byte[][] frameBuffers;
 	public int fbCounter = 0;
@@ -724,8 +736,9 @@ final class PreviewCallback implements Camera.PreviewCallback {
 
 		try
 		{
-			int w = this.configManager.cameraResolution.x;
-			int h = this.configManager.cameraResolution.y;
+			param = camera.getParameters();
+			int w = param.getPreviewSize().width;
+			int h = param.getPreviewSize().height;
 
 			int[] rgbArray = new int[w * h];
 
@@ -749,6 +762,7 @@ final class PreviewCallback implements Camera.PreviewCallback {
 			{
 				bitmap.compress(Bitmap.CompressFormat.JPEG, 75, outputStream);
 			}
+
 
 			synchronized (this)
 			{
